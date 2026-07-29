@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNT ዕለታዊ ሪፖርት</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #333);
+            padding: 16px;
+        }
+        .header {
+            background: var(--tg-theme-button-color, #2196F3);
+            color: var(--tg-theme-button-text-color, white);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 20px; margin-bottom: 5px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        
+        .form-group {
+            background: var(--tg-theme-secondary-bg-color, white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--tg-theme-hint-color, #666);
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--tg-theme-bg-color, white);
+            color: var(--tg-theme-text-color, #333);
+        }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: var(--tg-theme-secondary-bg-color, white);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-card .number { font-size: 24px; font-weight: bold; color: var(--tg-theme-button-color, #2196F3); }
+        .stat-card .label { font-size: 12px; color: var(--tg-theme-hint-color, #666); margin-top: 4px; }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--tg-theme-button-color, #2196F3);
+            color: var(--tg-theme-button-text-color, white);
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:active { opacity: 0.8; }
+        .btn-secondary {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            color: var(--tg-theme-button-color, #2196F3);
+            border: 2px solid var(--tg-theme-button-color, #2196F3);
+            border-radius: 12px;
+            font-size: 16px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        
+        .photo-upload {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .photo-upload:hover { border-color: var(--tg-theme-button-color, #2196F3); }
+        .photo-upload .icon { font-size: 32px; margin-bottom: 8px; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--tg-theme-button-color, #2196F3);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .success-message .icon { font-size: 64px; margin-bottom: 16px; }
+        .success-message h2 { font-size: 24px; margin-bottom: 8px; }
+        .success-message p { color: #666; }
+    </style>
+</head>
+<body>
+    <div id="reportForm">
+        <div class="header">
+            <h1>🏗️ TNT Construction</h1>
+            <p>ዕለታዊ የሳይት ሪፖርት</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number" id="currentDate">---</div>
+                <div class="label">ቀን</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="siteName">---</div>
+                <div class="label">የስራ ቦታ</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>👥 የሰራተኞች ብዛት (Workforce)</label>
+            <input type="number" id="workforce" placeholder="ለምሳሌ፦ 45" min="0">
+        </div>
+
+        <div class="form-group">
+            <label>📊 የስራ ሂደት መቶኛ (Progress %)</label>
+            <input type="range" id="progress" min="0" max="100" value="0" 
+                   oninput="document.getElementById('progressValue').textContent = this.value + '%';
+                            document.getElementById('progressFill').style.width = this.value + '%'">
+            <div style="text-align: center; font-size: 20px; font-weight: bold; margin-top: 8px;" id="progressValue">0%</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>🚜 የማሽነሪ ሰዓታት (Equipment Hours)</label>
+            <input type="text" id="equipment" placeholder="ለምሳሌ፦ Excavator: 8hrs, Mixer: 6hrs">
+        </div>
+
+        <div class="form-group">
+            <label>🌤️ የአየር ሁኔታ (Weather)</label>
+            <select id="weather">
+                <option value="">ምረጥ...</option>
+                <option value="sunny">☀️ ፀሀያማ</option>
+                <option value="cloudy">⛅ ደመናማ</option>
+                <option value="rainy">🌧️ ዝናባማ</option>
+                <option value="windy">💨 ነፋሻማ</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>📝 የስራ ማጠቃለያ (Summary)</label>
+            <textarea id="summary" placeholder="የዛሬውን ስራ ያስረዱ..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>⚠️ ያጋጠሙ ችግሮች (Challenges)</label>
+            <textarea id="challenges" placeholder="ማንኛውም ያጋጠመ ችግር ወይም መጓተት..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>📸 የሳይት ፎቶ (Site Photos)</label>
+            <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+                <div class="icon">📷</div>
+                <p>ፎቶ ለመጨመር ይንኩ</p>
+                <small>ከ3 ፎቶ በላይ መጨመር ይችላሉ</small>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display: none">
+            <div id="photoPreview" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;"></div>
+        </div>
+
+        <button class="btn-primary" onclick="submitReport()">
+            📤 ሪፖርት ላክ (Submit Report)
+        </button>
+        <button class="btn-secondary" onclick="saveDraft()">
+            💾 እንደ ረቂቅ አስቀምጥ (Save as Draft)
+        </button>
+    </div>
+
+    <div class="success-message" id="successMessage">
+        <div class="icon">✅</div>
+        <h2>ሪፖርቱ ተልኳል!</h2>
+        <p>ሪፖርትዎ በተሳካ ሁኔታ ተልኳል።</p>
+        <p>ለዋናው ቢሮ ማሳወቂያ ተልኳል።</p>
+        <button class="btn-primary" onclick="location.reload()" style="margin-top: 20px;">
+            ➕ ሌላ ሪፖርት ጨምር
+        </button>
+    </div>
+
+    <script>
+        // Initialize Telegram Mini App
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        
+        // Get user data from Telegram
+        const initData = tg.initDataUnsafe;
+        const user = initData?.user;
+        const startParam = initData?.start_param;
+        
+        // Set theme colors
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor);
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor);
+        
+        // Configure Main Button
+        tg.MainButton.setText('📤 ሪፖርት ላክ').show().onClick(submitReport);
+        
+        // Set current date
+        const today = new Date();
+        document.getElementById('currentDate').textContent = today.toLocaleDateString('am-ET');
+        
+        // Get site info from backend
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/telegram/user-info', {
+                    headers: {
+                        'X-Telegram-Init-Data': tg.initData
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('siteName').textContent = data.data.site_name || 'አልተመደበም';
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+        
+        // Photo preview
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = '';
+            
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.width = '80px';
+                    img.style.height = '80px';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '8px';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+        
+        // Submit report
+        async function submitReport() {
+            tg.MainButton.showProgress();
+            
+            const formData = new FormData();
+            formData.append('workforce_count', document.getElementById('workforce').value);
+            formData.append('progress_percentage', document.getElementById('progress').value);
+            formData.append('equipment_hours', document.getElementById('equipment').value);
+            formData.append('weather', document.getElementById('weather').value);
+            formData.append('summary', document.getElementById('summary').value);
+            formData.append('challenges', document.getElementById('challenges').value);
+            formData.append('status', 'submitted');
+            formData.append('report_date', today.toISOString().split('T')[0]);
+            
+            // Add photos
+            const photos = document.getElementById('photoInput').files;
+            for (let i = 0; i < photos.length; i++) {
+                formData.append('photos[]', photos[i]);
+            }
+            
+            try {
+                const response = await fetch('/api/telegram/submit-report', {
+                    method: 'POST',
+                    headers: {
+                        'X-Telegram-Init-Data': tg.initData,
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('reportForm').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                    tg.MainButton.hide();
+                    
+                    // Send data back to Telegram bot
+                    tg.sendData(JSON.stringify({
+                        action: 'report_submitted',
+                        report_id: data.data.id,
+                        message: '✅ ዕለታዊ ሪፖርት ተልኳል!'
+                    }));
+                } else {
+                    alert('❌ ሪፖርቱን መላክ አልተቻለም። እባክዎ እንደገና ይሞክሩ።');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ የኔትወርክ ችግር አለ። እባክዎ ቆይተው ይሞክሩ።');
+            } finally {
+                tg.MainButton.hideProgress();
+            }
+        }
+        
+        function saveDraft() {
+            alert('💾 ረቂቅ ተቀምጧል (Draft Saved)');
+        }
+        
+        // Load user data on start
+        loadUserData();
+    </script>
+</body>
+</html>

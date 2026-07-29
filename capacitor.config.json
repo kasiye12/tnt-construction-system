@@ -1,0 +1,29 @@
+{
+  "appId": "com.tntconstruction.app",
+  "appName": "TNT Construction",
+  "webDir": "public",
+  "server": {
+    "url": "http://192.168.1.100:8000",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0f172a",
+      "showSpinner": true,
+      "spinnerColor": "#0ea5e9"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_tnt",
+      "iconColor": "#0ea5e9"
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  }
+}

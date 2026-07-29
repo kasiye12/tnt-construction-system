@@ -1,0 +1,106 @@
+# File: docker-compose.yml
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tnt-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - .:/var/www
+      - ./storage:/var/www/storage
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - tnt-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: tnt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tnt_construction
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - tnt-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: tnt-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - tnt-network
+
+  reverb:
+    image: node:18-alpine
+    container_name: tnt-reverb
+    restart: unless-stopped
+    working_dir: /app
+    command: npx reverb-server
+    environment:
+      - REVERB_APP_ID=${REVERB_APP_ID}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
+    ports:
+      - "8080:8080"
+    networks:
+      - tnt-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: tnt-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - tnt-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tnt-worker
+    restart: unless-stopped
+    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - tnt-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  tnt-network:
+    driver: bridge
