@@ -3,182 +3,160 @@
 @section('title', 'Messages')
 
 @section('content')
-<div class="flex h-[calc(100vh-10rem)] bg-gray-50 rounded-2xl overflow-hidden border border-gray-200">
-    <!-- Sidebar -->
-    <div class="w-80 bg-white border-r flex flex-col">
-        <div class="p-4 border-b">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-lg font-bold text-gray-900">Messages</h2>
-                <button onclick="toggleNewChat()" class="w-8 h-8 bg-sky-500 text-white rounded-lg flex items-center justify-center hover:bg-sky-600 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                </button>
+<div class="flex h-[calc(100vh-8rem)] bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+    <!-- Conversations Sidebar -->
+    <div class="w-[360px] border-r border-gray-200 flex flex-col bg-gray-50/50">
+        <!-- Header -->
+        <div class="p-5 border-b border-gray-200 bg-white">
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-2xl font-bold text-gray-900">Messages</h1>
+                <div class="flex items-center space-x-2">
+                    <button onclick="showNewGroupModal()" class="p-2 hover:bg-gray-100 rounded-xl transition" title="New Group">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <input type="text" placeholder="Search messages..." 
-                   class="w-full px-4 py-2 bg-gray-50 border-0 rounded-xl text-sm focus:ring-2 focus:ring-sky-500">
+            <div class="relative">
+                <input type="text" placeholder="Search messages..." 
+                       class="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-0 rounded-xl text-sm focus:ring-2 focus:ring-sky-500">
+                <svg class="absolute left-3 top-3 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
         </div>
 
+        <!-- Tabs -->
+        <div class="flex bg-white border-b border-gray-200">
+            <button class="flex-1 py-3 text-sm font-medium text-sky-600 border-b-2 border-sky-600">All</button>
+            <button class="flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700">Direct</button>
+            <button class="flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700">Groups</button>
+        </div>
+
+        <!-- Conversations List -->
         <div class="flex-1 overflow-y-auto">
             <!-- Direct Messages -->
             @if($directChats->count() > 0)
             <div class="px-4 py-2">
-                <p class="text-xs font-semibold text-gray-400 uppercase">Direct Messages</p>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Direct Messages</p>
             </div>
-            @foreach($directChats as $channel)
-            <a href="{{ route('chat.show', $channel) }}" 
-               class="flex items-center px-4 py-3 hover:bg-gray-50 transition {{ request()->route('channel')?->id == $channel->id ? 'bg-sky-50 border-l-2 border-sky-500' : '' }}">
-                <div class="relative">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold">
-                        {{ $channel->avatar_letter }}
+            @foreach($directChats as $chat)
+            <a href="{{ route('chat.show', $chat) }}" 
+               class="flex items-center px-4 py-3 hover:bg-gray-100 transition mx-2 rounded-xl mb-1
+                      {{ request()->route('channel')?->id == $chat->id ? 'bg-sky-50 border border-sky-200' : '' }}">
+                <div class="relative flex-shrink-0">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg">
+                        {{ $chat->display_avatar }}
                     </div>
-                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+                    @if($chat->other_user?->last_seen_at?->diffInMinutes(now()) < 5)
+                    <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></span>
+                    @endif
                 </div>
                 <div class="ml-3 flex-1 min-w-0">
                     <div class="flex items-center justify-between">
-                        <p class="text-sm font-semibold text-gray-900 truncate">{{ $channel->display_name }}</p>
-                        @if($channel->last_message_at)
-                            <span class="text-xs text-gray-400">{{ $channel->last_message_at->format('H:i') }}</span>
-                        @endif
+                        <p class="text-sm font-semibold text-gray-900 truncate">{{ $chat->display_name }}</p>
+                        <span class="text-xs text-gray-400">{{ $chat->last_message_at?->format('H:i') }}</span>
                     </div>
-                    <p class="text-xs text-gray-500 truncate mt-1">
-                        {{ $channel->messages->first()?->body ?? 'Start chatting' }}
+                    <p class="text-xs text-gray-500 truncate mt-0.5">
+                        {{ $chat->lastMessage?->body ?? 'Start conversation' }}
                     </p>
                 </div>
+                @if($chat->unread_count > 0)
+                <span class="ml-2 min-w-[22px] h-5 bg-sky-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5">
+                    {{ $chat->unread_count }}
+                </span>
+                @endif
             </a>
             @endforeach
             @endif
 
             <!-- Group Channels -->
             <div class="px-4 py-2 mt-2">
-                <p class="text-xs font-semibold text-gray-400 uppercase">Channels</p>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Channels</p>
             </div>
             @forelse($groupChannels as $channel)
             <a href="{{ route('chat.show', $channel) }}" 
-               class="flex items-center px-4 py-3 hover:bg-gray-50 transition {{ request()->route('channel')?->id == $channel->id ? 'bg-sky-50 border-l-2 border-sky-500' : '' }}">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-bold">
-                    {{ $channel->avatar_letter }}
+               class="flex items-center px-4 py-3 hover:bg-gray-100 transition mx-2 rounded-xl mb-1
+                      {{ request()->route('channel')?->id == $channel->id ? 'bg-sky-50 border border-sky-200' : '' }}">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                    {{ $channel->display_avatar }}
                 </div>
                 <div class="ml-3 flex-1 min-w-0">
                     <div class="flex items-center justify-between">
                         <p class="text-sm font-semibold text-gray-900 truncate">{{ $channel->display_name }}</p>
-                        @if($channel->last_message_at)
-                            <span class="text-xs text-gray-400">{{ $channel->last_message_at->format('H:i') }}</span>
-                        @endif
+                        <span class="text-xs text-gray-400">{{ $channel->last_message_at?->format('H:i') }}</span>
                     </div>
-                    <p class="text-xs text-gray-500 truncate mt-1">
-                        {{ $channel->messages->first()?->body ?? 'No messages yet' }}
+                    <p class="text-xs text-gray-500 truncate mt-0.5">
+                        {{ $channel->lastMessage?->body ?? 'No messages yet' }}
                     </p>
                 </div>
             </a>
             @empty
-            <div class="text-center py-4 text-gray-500">
-                <p class="text-sm">No channels yet</p>
+            <div class="text-center py-8 px-4">
+                <p class="text-sm text-gray-500">No channels yet</p>
+                <button onclick="showNewGroupModal()" class="text-sky-500 text-sm hover:underline mt-1">Create one</button>
             </div>
             @endforelse
         </div>
+
+        <!-- Bottom: Start New Chat -->
+        <div class="p-4 border-t border-gray-200 bg-white">
+            <button onclick="showUserList()" 
+                    class="w-full flex items-center justify-center space-x-2 bg-sky-500 text-white py-3 rounded-xl font-medium hover:bg-sky-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span>New Conversation</span>
+            </button>
+        </div>
     </div>
 
-    <!-- Main Area -->
+    <!-- Main Chat Area (Welcome Screen) -->
     <div class="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
-        <div class="text-center">
-            <div class="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center">
-                <span class="text-4xl">💬</span>
+        <div class="text-center max-w-md">
+            <div class="w-32 h-32 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-lg shadow-sky-200">
+                <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
             </div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">TNT Messages</h3>
-            <p class="text-gray-500 mb-6">Chat with your team in real-time</p>
-            <div class="flex gap-3 justify-center">
-                <button onclick="showUserList()" class="bg-sky-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-sky-600 transition">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">TNT Messages</h2>
+            <p class="text-gray-500 mb-8">Connect with your team instantly. Select a conversation or start a new one.</p>
+            <div class="flex flex-col space-y-3">
+                <button onclick="showUserList()" class="w-full bg-sky-500 text-white py-3 rounded-xl font-medium hover:bg-sky-600 transition">
                     💬 Direct Message
                 </button>
-                <button onclick="toggleNewChat()" class="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 transition">
-                    👥 New Group
+                <button onclick="showNewGroupModal()" class="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-50 transition">
+                    👥 Create Group
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- New Group Modal -->
-<div id="newChatModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center" style="display: none;">
-    <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold">New Group Chat</h3>
-            <button onclick="toggleNewChat()" class="text-gray-400 hover:text-gray-600">✕</button>
-        </div>
-        <input type="text" id="channelName" placeholder="Group name..." 
-               class="w-full px-4 py-2 border rounded-xl text-sm mb-3">
-        <div class="max-h-48 overflow-y-auto border rounded-xl mb-4">
-            @foreach($users as $user)
-            <label class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0">
-                <input type="checkbox" value="{{ $user->id }}" class="member-checkbox rounded text-sky-500">
-                <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm ml-3">
-                    {{ strtoupper(substr($user->full_name, 0, 1)) }}
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium">{{ $user->full_name }}</p>
-                    <p class="text-xs text-gray-500">{{ $user->position ?? 'Staff' }}</p>
-                </div>
-            </label>
-            @endforeach
-        </div>
-        <button onclick="createChannel()" class="w-full bg-sky-500 text-white py-3 rounded-xl font-medium hover:bg-sky-600">
-            Create Group
-        </button>
-    </div>
-</div>
+<!-- User List Modal -->
+@include('chat.partials.user-list-modal')
 
-<!-- Direct Message Modal -->
-<div id="userListModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center" style="display: none;">
-    <div class="bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold">New Message</h3>
-            <button onclick="hideUserList()" class="text-gray-400 hover:text-gray-600">✕</button>
-        </div>
-        <input type="text" placeholder="Search users..." 
-               class="w-full px-4 py-2 border rounded-xl text-sm mb-3"
-               oninput="filterUsers(this.value)">
-        <div class="max-h-64 overflow-y-auto" id="userList">
-            @foreach($users as $user)
-            <div onclick="startDirectChat({{ $user->id }})" 
-                 class="flex items-center p-3 hover:bg-gray-50 rounded-xl cursor-pointer user-item">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold">
-                    {{ strtoupper(substr($user->full_name, 0, 1)) }}
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium">{{ $user->full_name }}</p>
-                    <p class="text-xs text-gray-500">{{ $user->position ?? 'Staff' }}</p>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</div>
+<!-- New Group Modal -->
+@include('chat.partials.new-group-modal')
 
 <script>
-function toggleNewChat() {
-    const modal = document.getElementById('newChatModal');
-    modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
-}
-
 function showUserList() {
-    document.getElementById('userListModal').style.display = 'flex';
+    document.getElementById('userListModal').classList.remove('hidden');
 }
-
 function hideUserList() {
-    document.getElementById('userListModal').style.display = 'none';
+    document.getElementById('userListModal').classList.add('hidden');
 }
-
-function filterUsers(query) {
-    document.querySelectorAll('.user-item').forEach(item => {
-        const name = item.querySelector('.text-sm').textContent.toLowerCase();
-        item.style.display = name.includes(query.toLowerCase()) ? 'flex' : 'none';
-    });
+function showNewGroupModal() {
+    document.getElementById('newGroupModal').classList.remove('hidden');
+}
+function hideNewGroupModal() {
+    document.getElementById('newGroupModal').classList.add('hidden');
 }
 
 async function startDirectChat(userId) {
     try {
-        const response = await fetch('{{ route("chat.direct") }}', {
+        const res = await fetch('{{ route("chat.direct") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -187,27 +165,19 @@ async function startDirectChat(userId) {
             },
             body: JSON.stringify({ user_id: userId })
         });
-        
-        const data = await response.json();
-        if (data.success && data.redirect) {
-            window.location.href = data.redirect;
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
+        const data = await res.json();
+        if (data.redirect) window.location.href = data.redirect;
+    } catch(e) { console.error(e); }
 }
 
-async function createChannel() {
-    const name = document.getElementById('channelName').value.trim() || 'New Group';
+async function createGroup() {
+    const name = document.getElementById('groupName').value.trim();
     const members = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
-    
-    if (members.length === 0) {
-        alert('Select at least one member');
-        return;
-    }
+    if (!name) return alert('Enter group name');
+    if (members.length === 0) return alert('Select members');
     
     try {
-        const response = await fetch('{{ route("chat.create") }}', {
+        const res = await fetch('{{ route("chat.create") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -216,22 +186,13 @@ async function createChannel() {
             },
             body: JSON.stringify({ name, member_ids: members })
         });
-        
-        const data = await response.json();
-        if (data.success && data.redirect) {
-            window.location.href = data.redirect;
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
+        const data = await res.json();
+        if (data.redirect) window.location.href = data.redirect;
+    } catch(e) { console.error(e); }
 }
 
-// Close modals on Escape
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        document.getElementById('newChatModal').style.display = 'none';
-        document.getElementById('userListModal').style.display = 'none';
-    }
+    if (e.key === 'Escape') { hideUserList(); hideNewGroupModal(); }
 });
 </script>
 @endsection

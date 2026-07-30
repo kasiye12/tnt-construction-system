@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Test</title>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+</head>
+<body>
+    <h1>🔴 Real-Time Notification Test</h1>
+    <div id="messages"></div>
+    <button onclick="testNotification()">Test Notification</button>
+    <button onclick="testSound()">Test Sound</button>
+    
+    <audio id="notifSound" src="/sounds/notification.wav" preload="auto"></audio>
+    
+    <script>
+        // Connect to Reverb
+        const pusher = new Pusher('tntreverb', {
+            wsHost: '127.0.0.1',
+            wsPort: 8080,
+            forceTLS: false,
+            enabledTransports: ['ws'],
+        });
+        
+        const channel = pusher.subscribe('user.1');
+        channel.bind('notification.sent', (data) => {
+            document.getElementById('messages').innerHTML += 
+                `<div style="background:#dbeafe;padding:10px;margin:5px;border-radius:8px;">
+                    🔔 ${data.notification?.title || 'Notification'}: ${data.notification?.message || ''}
+                </div>`;
+            
+            // Play sound
+            document.getElementById('notifSound').play();
+            
+            // Browser notification
+            if (Notification.permission === 'granted') {
+                new Notification(data.notification?.title || 'TNT Alert', {
+                    body: data.notification?.message || '',
+                    icon: '/icons/icon-192x192.png',
+                });
+            }
+        });
+        
+        console.log('✅ Connected to real-time server!');
+        
+        function testNotification() {
+            if (Notification.permission !== 'granted') {
+                Notification.requestPermission();
+            }
+            document.getElementById('notifSound').play();
+            document.getElementById('messages').innerHTML += 
+                '<div style="background:#d1fae5;padding:10px;margin:5px;border-radius:8px;">✅ Sound played! Request notification permission if prompted.</div>';
+        }
+        
+        function testSound() {
+            document.getElementById('notifSound').play();
+        }
+    </script>
+</body>
+</html>

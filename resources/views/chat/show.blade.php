@@ -1,87 +1,92 @@
 @extends('layouts.app')
 
-@section('title', $channel->type == 'direct' ? ($otherUser->full_name ?? 'Chat') : $channel->name)
+@section('title', $channel->type == 'direct' ? ($otherUser->full_name ?? 'Chat') : '#'.$channel->name)
 
 @section('content')
-<div class="flex h-[calc(100vh-10rem)] bg-gray-50 rounded-2xl overflow-hidden border border-gray-200">
-    <!-- Sidebar -->
-    <div class="w-80 bg-white border-r flex flex-col">
-        <div class="p-4 border-b">
-            <a href="{{ route('chat.index') }}" class="text-sky-500 hover:text-sky-600 text-sm flex items-center">
-                ← Back
-            </a>
-            @if($channel->type == 'direct' && $otherUser)
-                <div class="flex items-center mt-3">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-lg font-bold">
-                        {{ strtoupper(substr($otherUser->full_name, 0, 1)) }}
-                    </div>
-                    <div class="ml-3">
-                        <h2 class="text-lg font-bold">{{ $otherUser->full_name }}</h2>
-                        <p class="text-sm text-gray-500">{{ $otherUser->position ?? 'Staff' }}</p>
-                    </div>
-                </div>
-            @else
-                <h2 class="text-lg font-bold mt-2"># {{ $channel->name }}</h2>
-                <p class="text-sm text-gray-500">{{ $channel->members->count() }} members</p>
-            @endif
+<div class="flex h-[calc(100vh-8rem)] bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+    <div class="w-[320px] border-r flex flex-col bg-gray-50/50">
+        <div class="p-4 border-b bg-white">
+            <a href="{{ route('chat.index') }}" class="text-sky-500 text-sm">← Back</a>
+            <h2 class="font-bold mt-2">{{ $channel->type == 'direct' ? ($otherUser->full_name ?? 'Chat') : '#'.$channel->name }}</h2>
         </div>
-        
-        @if($channel->type != 'direct')
-        <div class="flex-1 overflow-y-auto p-4">
-            <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Members</h3>
-            @foreach($channel->members as $member)
-            <div class="flex items-center py-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold">
-                    {{ strtoupper(substr($member->full_name ?? 'U', 0, 1)) }}
-                </div>
-                <div class="ml-2">
-                    <p class="text-sm font-medium">{{ $member->full_name ?? 'Unknown' }}</p>
-                    <p class="text-xs text-gray-400">{{ $member->pivot->role ?? 'member' }}</p>
-                </div>
-            </div>
-            @endforeach
-        </div>
-        @endif
     </div>
 
-    <!-- Chat Area -->
     <div class="flex-1 flex flex-col">
-        <!-- Messages -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-4" id="messagesContainer">
-            @foreach($messages as $message)
-                @if($message->type == 'system')
-                <div class="flex justify-center">
-                    <span class="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">{{ $message->body }}</span>
-                </div>
+        <div class="flex-1 overflow-y-auto px-6 py-4 space-y-3" id="messagesContainer">
+            @foreach($messages as $msg)
+                @if($msg->type == 'system')
+                <div class="text-center py-2"><span class="bg-gray-100 text-gray-500 text-xs px-4 py-1.5 rounded-full">{{ $msg->body }}</span></div>
                 @else
-                <div class="flex {{ $message->sender_id == Auth::id() ? 'justify-end' : 'justify-start' }}" data-id="{{ $message->id }}">
-                    <div class="flex {{ $message->sender_id == Auth::id() ? 'flex-row-reverse' : '' }} items-end max-w-[70%] gap-2">
-                        @if($message->sender_id != Auth::id())
+                <div class="flex {{ $msg->sender_id == Auth::id() ? 'justify-end' : 'justify-start' }} mb-1" data-id="{{ $msg->id }}">
+                    <div class="flex {{ $msg->sender_id == Auth::id() ? 'flex-row-reverse' : '' }} items-end max-w-[70%] gap-2">
+                        @if($msg->sender_id != Auth::id())
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white text-sm flex-shrink-0">
-                            {{ strtoupper(substr($message->sender->full_name ?? 'U', 0, 1)) }}
+                            {{ strtoupper(substr($msg->sender->full_name ?? 'U', 0, 1)) }}
                         </div>
                         @endif
                         
-                        <div class="{{ $message->sender_id == Auth::id() ? 'bg-sky-500 text-white' : 'bg-white border' }} rounded-2xl px-4 py-2 shadow-sm">
-                            @if($message->sender_id != Auth::id() && $channel->type != 'direct')
-                            <p class="text-xs font-semibold text-sky-600 mb-1">{{ $message->sender->full_name ?? 'Unknown' }}</p>
+                        <div class="{{ $msg->sender_id == Auth::id() ? 'bg-sky-500 text-white' : 'bg-gray-100' }} rounded-2xl px-4 py-2.5 max-w-[300px]">
+                            @if($msg->media_urls)
+                                @php $media = json_decode($msg->media_urls); @endphp
+                                
+                                {{-- Image --}}
+                                @if($msg->type == 'image')
+                                <img src="{{ $media->url }}" class="max-w-[250px] rounded-xl mb-2 cursor-pointer" 
+                                     onclick="window.open('{{ $media->url }}')" loading="lazy">
+                                @endif
+                                
+                                {{-- Video --}}
+                                @if($msg->type == 'video')
+                                <video controls class="max-w-[250px] rounded-xl mb-2" style="max-height:200px;">
+                                    <source src="{{ $media->url }}" type="{{ $media->mime }}">
+                                </video>
+                                @endif
+                                
+                                {{-- PDF --}}
+                                @if($msg->type == 'pdf')
+                                <a href="{{ $media->url }}" target="_blank" 
+                                   class="flex items-center gap-3 p-3 bg-white/20 rounded-xl hover:bg-white/30 transition">
+                                    <span class="text-2xl">📄</span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium truncate">{{ $media->name }}</p>
+                                        <p class="text-xs opacity-70">{{ $media->size_formatted }}</p>
+                                    </div>
+                                </a>
+                                @endif
+                                
+                                {{-- Word/Excel Document --}}
+                                @if($msg->type == 'document')
+                                <a href="{{ $media->url }}" target="_blank" 
+                                   class="flex items-center gap-3 p-3 bg-white/20 rounded-xl hover:bg-white/30 transition">
+                                    <span class="text-2xl">{{ str_contains($media->mime, 'sheet') || str_contains($media->mime, 'excel') ? '📊' : '📝' }}</span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium truncate">{{ $media->name }}</p>
+                                        <p class="text-xs opacity-70">{{ $media->size_formatted }}</p>
+                                    </div>
+                                </a>
+                                @endif
+                                
+                                {{-- Other files --}}
+                                @if($msg->type == 'file')
+                                <a href="{{ $media->url }}" download 
+                                   class="flex items-center gap-3 p-3 bg-white/20 rounded-xl hover:bg-white/30 transition">
+                                    <span class="text-2xl">📎</span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium truncate">{{ $media->name }}</p>
+                                        <p class="text-xs opacity-70">{{ $media->size_formatted }}</p>
+                                    </div>
+                                </a>
+                                @endif
                             @endif
                             
-                            @if($message->type == 'image' && $message->media_urls)
-                                @php $urls = json_decode($message->media_urls); @endphp
-                                <img src="{{ $urls->url }}" class="max-w-xs rounded-lg mb-2">
+                            @if($msg->body)
+                            <p class="text-sm leading-relaxed">{{ $msg->body }}</p>
                             @endif
                             
-                            @if($message->body)
-                            <p class="text-sm">{{ $message->body }}</p>
-                            @endif
-                            
-                            <div class="flex items-center justify-end gap-2 mt-1">
-                                <span class="text-xs {{ $message->sender_id == Auth::id() ? 'text-sky-100' : 'text-gray-400' }}">
-                                    {{ $message->created_at->format('H:i') }}
-                                </span>
-                                @if($message->sender_id == Auth::id())
-                                <button onclick="deleteMessage({{ $message->id }})" class="text-xs text-red-300 hover:text-red-100">🗑️</button>
+                            <div class="flex items-center justify-end gap-1 mt-1">
+                                <span class="text-xs {{ $msg->sender_id == Auth::id() ? 'text-sky-100' : 'text-gray-400' }}">{{ $msg->created_at->format('H:i') }}</span>
+                                @if($msg->sender_id == Auth::id())
+                                <button onclick="deleteMessage({{ $msg->id }})" class="text-xs">🗑️</button>
                                 @endif
                             </div>
                         </div>
@@ -91,50 +96,105 @@
             @endforeach
         </div>
 
-        <!-- Input -->
-        <div class="p-4 bg-white border-t">
-            <form id="messageForm" class="flex items-end gap-2">
+        <div id="typingIndicator" class="px-6 py-1 text-xs text-gray-400 hidden"></div>
+
+        <!-- Input with File Upload -->
+        <div class="p-4 border-t bg-white">
+            <form id="messageForm" class="flex items-end gap-2" enctype="multipart/form-data">
                 @csrf
-                <button type="button" onclick="document.getElementById('fileInput').click()" class="p-2 text-gray-400 hover:text-sky-500 rounded-xl">📎</button>
-                <input type="file" id="fileInput" name="file" class="hidden" onchange="sendMessage(event)">
-                <textarea id="messageInput" name="body" rows="1" 
-                          class="flex-1 border-0 bg-gray-50 rounded-xl px-4 py-3 resize-none text-sm"
-                          placeholder="Type a message..."
-                          onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(event); }"></textarea>
-                <button type="submit" class="p-3 bg-sky-500 text-white rounded-xl hover:bg-sky-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                    </svg>
+                <input type="file" id="fileInput" name="file" class="hidden" 
+                       accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+                       onchange="handleFileSelect(this)">
+                
+                <button type="button" onclick="document.getElementById('fileInput').click()" 
+                        class="p-2.5 text-gray-400 hover:text-sky-500 hover:bg-gray-100 rounded-xl transition flex-shrink-0"
+                        title="Attach file (Max 5MB)">
+                    📎
+                </button>
+                
+                <div class="flex-1 relative">
+                    <textarea id="messageInput" rows="1" 
+                              class="w-full border-0 bg-gray-100 rounded-2xl px-5 py-3 resize-none text-sm focus:ring-2 focus:ring-sky-500"
+                              placeholder="Type a message or attach a file... (Enter to send)"
+                              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+                    
+                    <!-- File preview -->
+                    <div id="filePreview" class="hidden mt-2 p-2 bg-blue-50 rounded-xl flex items-center gap-2">
+                        <span id="filePreviewIcon"></span>
+                        <span id="filePreviewName" class="text-sm text-gray-700"></span>
+                        <span id="filePreviewSize" class="text-xs text-gray-500"></span>
+                        <button type="button" onclick="clearFile()" class="text-red-500 text-xs">✕</button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="p-3 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                 </button>
             </form>
+            <p class="text-xs text-gray-400 mt-2">📎 Supports: Images, Videos, PDF, Word, Excel (Max 5MB)</p>
         </div>
     </div>
 </div>
 
-<script>
-const container = document.getElementById('messagesContainer');
-container.scrollTop = container.scrollHeight;
+<audio id="msgSound" src="/sounds/notification.wav" preload="auto"></audio>
 
-// Auto-refresh every 3 seconds for new messages
-setInterval(() => {
-    fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(res => res.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newMessages = doc.getElementById('messagesContainer').innerHTML;
-            if (newMessages !== container.innerHTML) {
-                container.innerHTML = newMessages;
-                container.scrollTop = container.scrollHeight;
+<script>
+const msgContainer = document.getElementById('messagesContainer');
+msgContainer.scrollTop = msgContainer.scrollHeight;
+
+// Real-time listener
+if (typeof Echo !== 'undefined') {
+    Echo.channel('chat.{{ $channel->id }}')
+        .listen('.message.sent', (e) => {
+            if (e.message.sender_id != {{ Auth::id() }}) {
+                appendMessage(e.message);
+                playAlert();
             }
         });
-}, 3000);
+}
 
-async function sendMessage(e) {
-    e.preventDefault();
+function handleFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (file.size > 5242880) {
+        alert('❌ File too large! Maximum size is 5MB.');
+        input.value = '';
+        return;
+    }
+    
+    const preview = document.getElementById('filePreview');
+    document.getElementById('filePreviewName').textContent = file.name;
+    document.getElementById('filePreviewSize').textContent = formatSize(file.size);
+    
+    if (file.type.startsWith('image/')) {
+        document.getElementById('filePreviewIcon').textContent = '🖼️';
+    } else if (file.type.startsWith('video/')) {
+        document.getElementById('filePreviewIcon').textContent = '🎬';
+    } else if (file.type.includes('pdf')) {
+        document.getElementById('filePreviewIcon').textContent = '📄';
+    } else {
+        document.getElementById('filePreviewIcon').textContent = '📎';
+    }
+    
+    preview.classList.remove('hidden');
+}
+
+function clearFile() {
+    document.getElementById('fileInput').value = '';
+    document.getElementById('filePreview').classList.add('hidden');
+}
+
+function formatSize(bytes) {
+    if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+    return (bytes / 1024).toFixed(0) + ' KB';
+}
+
+async function sendMessage() {
     const input = document.getElementById('messageInput');
+    const fileInput = document.getElementById('fileInput');
     const body = input.value.trim();
-    const file = document.getElementById('fileInput').files[0];
+    const file = fileInput.files[0];
     
     if (!body && !file) return;
     
@@ -144,26 +204,44 @@ async function sendMessage(e) {
     formData.append('_token', '{{ csrf_token() }}');
     
     try {
-        await fetch('{{ url("/chat/".$channel->id."/send") }}', {
+        const res = await fetch('{{ route("chat.send", $channel) }}', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        input.value = '';
-        document.getElementById('fileInput').value = '';
-        location.reload();
-    } catch (error) {
-        console.error('Error:', error);
+        const data = await res.json();
+        if (data.success) {
+            input.value = '';
+            clearFile();
+            input.style.height = 'auto';
+        }
+    } catch(e) { console.error(e); }
+}
+
+function appendMessage(msg) {
+    // Reload to show complex file attachments properly
+    location.reload();
+}
+
+function playAlert() {
+    const audio = document.getElementById('msgSound');
+    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
+    if (Notification.permission === 'granted' && document.hidden) {
+        new Notification('💬 New Message', { body: 'New message received', icon: '/icons/icon-192x192.png' });
     }
 }
 
 async function deleteMessage(id) {
     if (!confirm('Delete?')) return;
-    await fetch('/chat/message/' + id + '/delete', {
+    await fetch('/chat/message/' + id, {
         method: 'DELETE',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
     });
     document.querySelector('[data-id="' + id + '"]').remove();
+}
+
+if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
 }
 </script>
 @endsection

@@ -1,7 +1,10 @@
+import './echo';
+import './notifications';
 
-
-import Alpine from 'alpinejs';
-
-window.Alpine = Alpine;
-
-Alpine.start();
+// Request notification permission
+document.addEventListener('DOMContentLoaded', () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    console.log('✅ TNT Construction App Ready');
+});

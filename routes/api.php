@@ -41,3 +41,10 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         ]);
     });
 });
+
+// Notification routes
+Route::post('/notifications/register-device', [App\Http\Controllers\Api\NotificationController::class, 'registerDevice']);
+Route::post('/notifications/unregister-device', [App\Http\Controllers\Api\NotificationController::class, 'unregisterDevice']);
+Route::get('/notifications', [App\Http\Controllers\Api\NotificationController::class, 'getNotifications']);
+Route::post('/notifications/{id}/read', [App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+Route::post('/notifications/test', [App\Http\Controllers\Api\NotificationController::class, 'sendTest']);

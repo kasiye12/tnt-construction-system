@@ -3,51 +3,37 @@
 @section('title', 'My Reports')
 
 @section('content')
-<div class="space-y-4">
-    <div class="flex justify-between items-center">
-        <h2 class="text-lg font-bold">My Reports</h2>
-        <a href="/mobile/reports/create" class="bg-blue-500 text-white px-4 py-2 rounded text-sm">
-            + New Report
-        </a>
-    </div>
-
-    @if(session('success'))
-    <div class="bg-green-100 text-green-700 p-3 rounded">
-        {{ session('success') }}
-    </div>
-    @endif
-
-    @forelse($reports as $report)
+<div class="animate-in">
+    <a href="/mobile/reports/create" class="btn btn-primary" style="margin-bottom:16px;">📝 New Report</a>
+    
+    @forelse($reports ?? [] as $report)
     <div class="card">
-        <div class="flex justify-between items-start">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
             <div>
-                <p class="font-semibold">{{ $report->site->site_name ?? 'N/A' }}</p>
-                <p class="text-sm text-gray-500">{{ $report->report_date->format('M d, Y') }}</p>
+                <div style="font-weight:600;">{{ $report->site->site_name ?? 'N/A' }}</div>
+                <div style="font-size:12px;color:#64748b;">{{ $report->report_date->format('M d, Y') }}</div>
             </div>
-            <span class="text-xs px-2 py-1 rounded-full 
-                @if($report->status == 'approved') bg-green-100 text-green-800
-                @elseif($report->status == 'submitted') bg-blue-100 text-blue-800
-                @elseif($report->status == 'rejected') bg-red-100 text-red-800
-                @else bg-gray-100 text-gray-800
-                @endif">
+            <span class="tag {{ $report->status == 'approved' ? 'tag-success' : ($report->status == 'submitted' ? 'tag-info' : 'tag-gray') }}">
                 {{ ucfirst($report->status) }}
             </span>
         </div>
         @if($report->summary_text)
-        <p class="text-sm mt-2 text-gray-600">{{ Str::limit($report->summary_text, 100) }}</p>
+        <div style="font-size:13px;color:#475569;margin-top:8px;">{{ Str::limit($report->summary_text, 80) }}</div>
         @endif
-        <div class="flex justify-between mt-3 text-sm">
+        <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:#64748b;">
             <span>👥 {{ $report->workforce_count }} workers</span>
             <span>📊 {{ $report->progress_percentage }}%</span>
         </div>
     </div>
     @empty
-    <div class="card text-center py-8">
-        <p class="text-gray-500">No reports yet</p>
-        <a href="/mobile/reports/create" class="text-blue-500 text-sm mt-2">Create your first report</a>
+    <div class="card" style="text-align:center;padding:40px;">
+        <div style="font-size:48px;margin-bottom:12px;">📝</div>
+        <div style="color:#64748b;">No reports yet</div>
     </div>
     @endforelse
-
-    {{ $reports->links() }}
+    
+    @if(isset($reports) && method_exists($reports, 'links'))
+    <div style="margin-top:16px;">{{ $reports->links() }}</div>
+    @endif
 </div>
 @endsection

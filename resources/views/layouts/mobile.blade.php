@@ -3,187 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1a56db">
+    <meta name="theme-color" content="#0ea5e9">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TNT Con">
     <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/pwa/icon-192.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'TNT Construction')</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        /* Mobile-optimized styles */
-        * { -webkit-tap-highlight-color: transparent; }
-        body { 
-            padding-bottom: 60px;
-            -webkit-user-select: none;
-            user-select: none;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; padding-bottom: 70px; -webkit-tap-highlight-color: transparent; }
+        
+        .mobile-header {
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            color: white; padding: 16px 20px; position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 20px rgba(14,165,233,0.3);
         }
+        .mobile-header h1 { font-size: 18px; font-weight: 700; }
+        .header-actions { display: flex; gap: 12px; }
+        .header-actions a { color: white; text-decoration: none; font-size: 20px; position: relative; }
+        .badge { position: absolute; top: -6px; right: -8px; background: #ef4444; color: white; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        
+        .content { padding: 16px; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        .card-header { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        
+        .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #3b82f6); color: white; }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-outline { background: white; border: 2px solid #0ea5e9; color: #0ea5e9; }
+        
+        .input-group { margin-bottom: 14px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 5px; }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+            font-size: 14px; color: #1e293b; background: #f8fafc; outline: none; transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: #0ea5e9; background: white; }
+        .input-group textarea { resize: vertical; min-height: 80px; }
+        
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0;
-            z-index: 50;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e2e8f0;
+            display: flex; justify-content: space-around; padding: 8px 0 12px; z-index: 100;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.05);
         }
         .bottom-nav a {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-decoration: none;
-            color: #6b7280;
-            font-size: 11px;
-            padding: 4px 12px;
-            transition: color 0.2s;
+            display: flex; flex-direction: column; align-items: center; text-decoration: none;
+            color: #94a3b8; font-size: 10px; font-weight: 500; gap: 4px; padding: 4px 12px;
+            transition: all 0.2s; border-radius: 12px;
         }
-        .bottom-nav a.active {
-            color: #1a56db;
+        .bottom-nav a.active { color: #0ea5e9; font-weight: 700; }
+        .bottom-nav a .nav-icon { font-size: 22px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        
+        .stat-value { font-size: 28px; font-weight: 800; color: #1e293b; }
+        .stat-label { font-size: 12px; color: #64748b; margin-top: 2px; }
+        
+        .list-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0; border-bottom: 1px solid #f1f5f9;
         }
-        .bottom-nav a .icon {
-            font-size: 20px;
-            margin-bottom: 2px;
+        .list-item:last-child { border-bottom: none; }
+        
+        .avatar {
+            width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center;
+            justify-content: center; color: white; font-weight: 700; font-size: 18px; flex-shrink: 0;
         }
-        .mobile-header {
-            background: #1a56db;
-            color: white;
-            padding: 12px 16px;
-            position: sticky;
-            top: 0;
-            z-index: 40;
+        .avatar-sm { width: 36px; height: 36px; border-radius: 10px; font-size: 14px; }
+        
+        .tag {
+            display: inline-block; padding: 4px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
         }
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            text-align: center;
-            border: none;
-            cursor: pointer;
-            width: 100%;
-        }
-        .btn-primary { background: #1a56db; color: white; }
-        .btn-success { background: #059669; color: white; }
-        .btn-danger { background: #dc2626; color: white; }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 12px;
-        }
+        .tag-success { background: #d1fae5; color: #065f46; }
+        .tag-warning { background: #fef3c7; color: #92400e; }
+        .tag-info { background: #dbeafe; color: #1e40af; }
+        .tag-danger { background: #fee2e2; color: #991b1b; }
+        .tag-gray { background: #f1f5f9; color: #475569; }
+        
+        .progress-bar { width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #0ea5e9, #3b82f6); border-radius: 3px; }
+        
+        .alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 12px; }
+        .alert-success { background: #d1fae5; color: #065f46; }
+        .alert-error { background: #fee2e2; color: #991b1b; }
+        
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: slideUp 0.3s ease forwards; }
     </style>
 </head>
 <body>
-    <!-- Mobile Header -->
     <div class="mobile-header">
-        <div class="flex justify-between items-center">
-            <h1 class="text-lg font-bold">@yield('title', 'TNT Con')</h1>
-            <div class="flex space-x-3">
-                <a href="/notifications" class="text-white relative">
-                    🔔
-                    <span id="mobile-notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center hidden">0</span>
-                </a>
-            </div>
+        <h1>@yield('title', 'TNT Con')</h1>
+        <div class="header-actions">
+            <a href="/notifications">🔔<span class="badge" id="notif-badge">0</span></a>
         </div>
     </div>
-
-    <!-- Main Content -->
-    <main class="p-4">
+    
+    <div class="content">
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-error">{{ session('error') }}</div>
+        @endif
         @yield('content')
-    </main>
-
-    <!-- Bottom Navigation -->
+    </div>
+    
     <div class="bottom-nav">
         <a href="/mobile" class="{{ request()->is('mobile') ? 'active' : '' }}">
-            <span class="icon">🏠</span>
-            Home
+            <span class="nav-icon">🏠</span>Home
         </a>
         <a href="/mobile/reports" class="{{ request()->is('mobile/reports*') ? 'active' : '' }}">
-            <span class="icon">📝</span>
-            Reports
+            <span class="nav-icon">📝</span>Reports
         </a>
         <a href="/mobile/checkin" class="{{ request()->is('mobile/checkin*') ? 'active' : '' }}">
-            <span class="icon">📍</span>
-            Check In
+            <span class="nav-icon">📍</span>Check In
         </a>
-        <a href="/mobile/chat" class="{{ request()->is('mobile/chat*') ? 'active' : '' }}">
-            <span class="icon">💬</span>
-            Chat
+        <a href="/chat" class="{{ request()->is('chat*') ? 'active' : '' }}">
+            <span class="nav-icon">💬</span>Chat
         </a>
         <a href="/mobile/profile" class="{{ request()->is('mobile/profile*') ? 'active' : '' }}">
-            <span class="icon">👤</span>
-            Profile
+            <span class="nav-icon">👤</span>Profile
         </a>
     </div>
-
-    <script>
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js');
-    }
-
-    // Offline storage helper
-    const offlineDB = {
-        save: function(key, data) {
-            localStorage.setItem('offline_' + key, JSON.stringify(data));
-        },
-        get: function(key) {
-            const item = localStorage.getItem('offline_' + key);
-            return item ? JSON.parse(item) : null;
-        },
-        remove: function(key) {
-            localStorage.removeItem('offline_' + key);
-        },
-        getAll: function() {
-            const items = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith('offline_')) {
-                    items[key] = JSON.parse(localStorage.getItem(key));
-                }
-            }
-            return items;
-        }
-    };
-
-    // Online/Offline detection
-    window.addEventListener('online', () => {
-        document.body.classList.remove('offline');
-        syncOfflineData();
-    });
-    
-    window.addEventListener('offline', () => {
-        document.body.classList.add('offline');
-    });
-
-    async function syncOfflineData() {
-        const pendingData = offlineDB.getAll();
-        for (const [key, data] of Object.entries(pendingData)) {
-            try {
-                await fetch('/api/sync', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                offlineDB.remove(key.replace('offline_', ''));
-            } catch (error) {
-                console.error('Sync failed for:', key);
-            }
-        }
-    }
-    </script>
 </body>
 </html>

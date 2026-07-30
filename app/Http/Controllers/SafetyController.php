@@ -3,15 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\SafetyIncident;
+use App\Models\Site;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
 class SafetyController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $incidents = SafetyIncident::with(['reportedBy', 'site', 'project'])
+        $incidents = SafetyIncident::with(['site', 'project', 'reportedBy'])
+            ->when($request->severity, fn($q) => $q->where('severity', $request->severity))
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
             ->latest()
             ->paginate(15);
 
@@ -20,7 +24,9 @@ class SafetyController extends Controller
             'minor' => SafetyIncident::where('severity', 'minor')->count(),
             'moderate' => SafetyIncident::where('severity', 'moderate')->count(),
             'major' => SafetyIncident::where('severity', 'major')->count(),
+            'fatal' => SafetyIncident::where('severity', 'fatal')->count(),
             'open' => SafetyIncident::whereIn('status', ['reported', 'investigating'])->count(),
+            'resolved' => SafetyIncident::where('status', 'resolved')->count(),
         ];
 
         return view('safety.index', compact('incidents', 'stats'));
@@ -28,8 +34,8 @@ class SafetyController extends Controller
 
     public function create()
     {
-        $sites = \App\Models\Site::where('status', 'active')->get();
-        $projects = \App\Models\Project::where('status', 'active')->get();
+        $sites = Site::where('status', 'active')->get();
+        $projects = Project::where('status', 'active')->get();
         return view('safety.create', compact('sites', 'projects'));
     }
 
@@ -40,63 +46,43 @@ class SafetyController extends Controller
             'site_id' => 'required|exists:sites,id',
             'incident_datetime' => 'required|date',
             'severity' => 'required|in:minor,moderate,major,fatal',
-            'type' => 'required|in:injury,near_miss,property_damage,environmental,equipment_failure,other',
+            'type' => 'required|string',
+            'location' => 'nullable|string',
             'description' => 'required|string',
             'immediate_actions' => 'nullable|string',
             'affected_persons' => 'nullable|string',
-            'injuries_sustained' => 'nullable|string',
-            'medical_treatment_required' => 'boolean',
-            'work_stoppage' => 'boolean',
         ]);
 
         $validated['uuid'] = Str::uuid();
-        $validated['incident_number'] = 'INC-' . date('Ymd') . '-' . Str::random(4);
+        $validated['incident_number'] = 'INC-' . date('Ymd') . '-' . strtoupper(Str::random(4));
         $validated['reported_by'] = Auth::id();
         $validated['status'] = 'reported';
 
-        $incident = SafetyIncident::create($validated);
+        // Send notification
+        $notifService = new \App\Services\NotificationService();
+        $notifService->notifyManagement('safety_incident', '🦺 Safety Incident Reported', 'New ' . $request->severity . ' severity incident at ' . \App\ModelsSite::find($request->site_id)->site_name, ['incident_id' => 'new']);
+        SafetyIncident::create($validated);
 
-        return redirect()->route('safety.index')
-            ->with('success', 'Safety incident reported successfully!');
+        return redirect()->route('safety.index')->with('success', '✅ Incident reported!');
     }
 
-    public function show($id)
+    public function show(SafetyIncident $safety)
     {
-        $incident = SafetyIncident::with(['reportedBy', 'investigatedBy', 'site', 'project'])
-            ->findOrFail($id);
-
-        return view('safety.show', compact('incident'));
+        $safety->load(['reportedBy', 'site', 'project', 'investigatedBy']);
+        return view('safety.show', ['incident' => $safety]);
     }
 
-    public function investigate(Request $request, $id)
+    public function resolve(Request $request, SafetyIncident $safety)
     {
-        $incident = SafetyIncident::findOrFail($id);
-
-        $request->validate([
-            'root_cause' => 'required|string',
-            'corrective_actions' => 'required|string',
-            'preventive_measures' => 'nullable|string',
-        ]);
-
-        $incident->update([
-            'status' => 'investigating',
+        $safety->update([
+            'status' => 'resolved',
+            'resolved_at' => now(),
             'investigated_by' => Auth::id(),
             'root_cause' => $request->root_cause,
             'corrective_actions' => $request->corrective_actions,
             'preventive_measures' => $request->preventive_measures,
         ]);
 
-        return back()->with('success', 'Investigation submitted!');
-    }
-
-    public function resolve($id)
-    {
-        $incident = SafetyIncident::findOrFail($id);
-        $incident->update([
-            'status' => 'resolved',
-            'resolved_at' => now(),
-        ]);
-
-        return back()->with('success', 'Incident resolved!');
+        return back()->with('success', '✅ Incident resolved!');
     }
 }

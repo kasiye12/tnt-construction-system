@@ -3,37 +3,48 @@
 @section('title', 'Daily Report')
 
 @section('content')
-<div class="space-y-4">
+<div class="animate-in">
     <div class="card">
-        <h2 class="text-lg font-bold mb-4">📝 Daily Report</h2>
-        <p class="text-sm text-gray-500 mb-4">{{ now()->format('l, F d, Y') }}</p>
-
-        <form action="/mobile/reports" method="POST" id="report-form">
+        <div class="card-header">📝 {{ date('l, F d, Y') }}</div>
+        
+        <form action="/mobile/reports" method="POST">
             @csrf
             
-            <label class="block text-sm font-medium mb-1">Site *</label>
-            <select name="site_id" required>
-                <option value="">Select site</option>
-                @foreach($sites as $site)
-                <option value="{{ $site->id }}">{{ $site->site_name }}</option>
-                @endforeach
-            </select>
-
-            <label class="block text-sm font-medium mb-1">Workforce Count</label>
-            <input type="number" name="workforce_count" placeholder="Number of workers" min="0">
-
-            <label class="block text-sm font-medium mb-1">Progress (%)</label>
-            <input type="range" name="progress_percentage" min="0" max="100" value="0" 
-                   oninput="document.getElementById('progress-val').textContent = this.value + '%'">
-            <div class="text-center font-bold text-lg" id="progress-val">0%</div>
-
-            <label class="block text-sm font-medium mb-1">Work Summary</label>
-            <textarea name="summary_text" rows="4" placeholder="Describe today's work..."></textarea>
-
-            <label class="block text-sm font-medium mb-1">Challenges</label>
-            <textarea name="challenges" rows="3" placeholder="Any issues or delays..."></textarea>
-
-            <button type="submit" class="btn btn-primary mt-4">
+            <div class="input-group">
+                <label>Site *</label>
+                <select name="site_id" required>
+                    <option value="">Select site</option>
+                    @foreach($sites as $site)
+                    <option value="{{ $site->id }}">{{ $site->site_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>Workforce Count</label>
+                <input type="number" name="workforce_count" placeholder="Number of workers" min="0">
+            </div>
+            
+            <div class="input-group">
+                <label>Progress: <span id="progVal">0%</span></label>
+                <input type="range" name="progress_percentage" min="0" max="100" value="0" 
+                       oninput="document.getElementById('progVal').textContent = this.value + '%'">
+                <div class="progress-bar" style="margin-top:8px;">
+                    <div class="progress-fill" id="progFill" style="width:0%"></div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>Work Summary</label>
+                <textarea name="summary_text" rows="3" placeholder="Describe today's work..."></textarea>
+            </div>
+            
+            <div class="input-group">
+                <label>Challenges</label>
+                <textarea name="challenges" rows="2" placeholder="Any issues or delays..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="margin-top:8px;">
                 📤 Submit Report
             </button>
         </form>

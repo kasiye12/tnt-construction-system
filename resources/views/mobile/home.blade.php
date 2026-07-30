@@ -3,77 +3,61 @@
 @section('title', 'TNT Construction')
 
 @section('content')
-<div class="space-y-4">
-    <!-- Welcome Card -->
-    <div class="card bg-blue-500 text-white">
-        <h2 class="text-xl font-bold">Welcome, {{ $user->full_name }}!</h2>
-        <p class="text-blue-100 mt-1">{{ $user->position ?? 'Worker' }}</p>
-        @if($user->site)
-        <p class="text-blue-200 text-sm mt-2">📍 {{ $user->site->site_name }}</p>
-        @endif
+<div class="animate-in">
+    <!-- Welcome -->
+    <div class="card" style="background: linear-gradient(135deg, #0ea5e9, #3b82f6); color: white;">
+        <p style="opacity:0.9;font-size:13px;">Welcome back</p>
+        <h2 style="font-size:20px;font-weight:700;margin-top:2px;">{{ $user->full_name ?? 'Worker' }}</h2>
+        <p style="opacity:0.8;font-size:12px;margin-top:4px;">{{ $user->site->site_name ?? 'No site assigned' }}</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid-2">
+        <div class="card text-center" onclick="window.location='/mobile/checkin'">
+            <div style="font-size:32px;">{{ isset($todayCheckin) && $todayCheckin && !$todayCheckin->check_out_time ? '✅' : '📍' }}</div>
+            <div class="stat-label">{{ isset($todayCheckin) && $todayCheckin && !$todayCheckin->check_out_time ? 'On Site' : 'Check In' }}</div>
+            @if(isset($todayCheckin) && $todayCheckin)
+            <div style="font-size:11px;color:#64748b;">{{ $todayCheckin->check_in_time->format('H:i') }}</div>
+            @endif
+        </div>
+        <div class="card text-center" onclick="window.location='/mobile/reports/create'">
+            <div style="font-size:32px;">{{ isset($todayReport) && $todayReport ? '✅' : '📝' }}</div>
+            <div class="stat-label">{{ isset($todayReport) && $todayReport ? 'Report Done' : 'Submit Report' }}</div>
+        </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="grid grid-cols-2 gap-3">
-        <a href="/mobile/checkin" class="card text-center {{ $todayCheckin ? 'bg-green-50' : '' }}">
-            <div class="text-3xl mb-2">{{ $todayCheckin ? '✅' : '📍' }}</div>
-            <div class="font-semibold text-sm">
-                {{ $todayCheckin ? 'Checked In' : 'Check In' }}
-            </div>
-            @if($todayCheckin)
-            <div class="text-xs text-gray-500 mt-1">{{ $todayCheckin->check_in_time->format('H:i') }}</div>
-            @endif
+    <div class="grid-3">
+        <a href="/mobile/checkin" class="card text-center" style="text-decoration:none;">
+            <div style="font-size:24px;">📍</div>
+            <div style="font-size:10px;color:#64748b;margin-top:4px;">Check In</div>
         </a>
-
-        <a href="/mobile/reports/create" class="card text-center {{ $todayReport ? 'bg-green-50' : '' }}">
-            <div class="text-3xl mb-2">{{ $todayReport ? '✅' : '📝' }}</div>
-            <div class="font-semibold text-sm">
-                {{ $todayReport ? 'Report Done' : 'Daily Report' }}
-            </div>
+        <a href="/mobile/reports/create" class="card text-center" style="text-decoration:none;">
+            <div style="font-size:24px;">📝</div>
+            <div style="font-size:10px;color:#64748b;margin-top:4px;">Report</div>
         </a>
-
-        <a href="/mobile/reports" class="card text-center">
-            <div class="text-3xl mb-2">📊</div>
-            <div class="font-semibold text-sm">My Reports</div>
-            <div class="text-xs text-gray-500 mt-1">{{ $recentReports->count() }} this week</div>
-        </a>
-
-        <a href="/mobile/chat" class="card text-center">
-            <div class="text-3xl mb-2">💬</div>
-            <div class="font-semibold text-sm">Messages</div>
+        <a href="/chat" class="card text-center" style="text-decoration:none;">
+            <div style="font-size:24px;">💬</div>
+            <div style="font-size:10px;color:#64748b;margin-top:4px;">Chat</div>
         </a>
     </div>
 
     <!-- Recent Reports -->
+    @if(isset($recentReports) && $recentReports->count() > 0)
     <div class="card">
-        <h3 class="font-bold mb-3">Recent Reports</h3>
-        @forelse($recentReports as $report)
-        <div class="flex justify-between items-center py-2 border-b last:border-0">
+        <div class="card-header">📋 Recent Reports</div>
+        @foreach($recentReports->take(5) as $report)
+        <div class="list-item">
             <div>
-                <p class="text-sm font-medium">{{ $report->site->site_name ?? 'N/A' }}</p>
-                <p class="text-xs text-gray-500">{{ $report->report_date->format('M d, Y') }}</p>
+                <div style="font-size:14px;font-weight:600;">{{ $report->site->site_name ?? 'N/A' }}</div>
+                <div style="font-size:12px;color:#64748b;">{{ $report->report_date->format('M d, Y') }}</div>
             </div>
-            <span class="text-xs px-2 py-1 rounded-full 
-                @if($report->status == 'approved') bg-green-100 text-green-800
-                @elseif($report->status == 'submitted') bg-yellow-100 text-yellow-800
-                @else bg-gray-100 text-gray-800 @endif">
-                {{ $report->status }}
+            <span class="tag {{ $report->status == 'approved' ? 'tag-success' : ($report->status == 'submitted' ? 'tag-info' : 'tag-gray') }}">
+                {{ ucfirst($report->status) }}
             </span>
         </div>
-        @empty
-        <p class="text-gray-500 text-sm text-center py-4">No reports yet</p>
-        @endforelse
+        @endforeach
     </div>
+    @endif
 </div>
-
-<script>
-// Check online status
-function updateOnlineStatus() {
-    if (!navigator.onLine) {
-        document.body.insertAdjacentHTML('afterbegin', 
-            '<div class="bg-yellow-500 text-white text-center py-2 text-sm">⚠️ Offline - Data will sync when connected</div>');
-    }
-}
-updateOnlineStatus();
-</script>
 @endsection

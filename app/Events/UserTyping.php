@@ -19,10 +19,7 @@ class UserTyping implements ShouldBroadcast
     public function __construct($channelId, $user, $isTyping)
     {
         $this->channel_id = $channelId;
-        $this->user = [
-            'id' => $user->id,
-            'name' => $user->full_name,
-        ];
+        $this->user = ['id' => $user->id, 'name' => $user->full_name];
         $this->is_typing = $isTyping;
     }
 

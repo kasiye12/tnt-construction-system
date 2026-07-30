@@ -79,7 +79,7 @@
         <div class="mt-3 flex items-center text-sm">
             <span class="text-red-500 font-medium">{{ $stats['safety']['open'] }} open cases</span>
             <span class="text-gray-300 mx-2">•</span>
-            <span class="text-gray-500">{{ $stats['safety']['this_month'] }} this month</span>
+            <span class="text-gray-500">{{ $stats['safety']['total'] }} total incidents</span>
         </div>
     </div>
 </div>

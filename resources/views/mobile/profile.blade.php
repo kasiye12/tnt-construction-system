@@ -3,39 +3,26 @@
 @section('title', 'Profile')
 
 @section('content')
-<div class="space-y-4">
+<div class="animate-in">
     <div class="card text-center">
-        <div class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-3">
-            {{ strtoupper(substr($user->full_name, 0, 1)) }}
+        <div class="avatar" style="width:72px;height:72px;font-size:28px;margin:0 auto 12px;background:linear-gradient(135deg,#0ea5e9,#8b5cf6);">
+            {{ strtoupper(substr($user->full_name ?? 'U', 0, 1)) }}
         </div>
-        <h2 class="text-xl font-bold">{{ $user->full_name }}</h2>
-        <p class="text-gray-600">{{ $user->position ?? 'Worker' }}</p>
+        <h2 style="font-size:20px;font-weight:700;">{{ $user->full_name ?? 'Worker' }}</h2>
+        <p style="color:#64748b;font-size:13px;">{{ $user->position ?? 'Staff' }}</p>
     </div>
 
     <div class="card">
-        <div class="space-y-3">
-            <div class="flex justify-between">
-                <span class="text-gray-600">Email</span>
-                <span>{{ $user->email }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-gray-600">Phone</span>
-                <span>{{ $user->phone_number }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-gray-600">Employee ID</span>
-                <span>{{ $user->employee_id ?? 'N/A' }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-gray-600">Site</span>
-                <span>{{ $user->site->site_name ?? 'Not assigned' }}</span>
-            </div>
-        </div>
+        <div class="list-item"><span style="color:#64748b;">Email</span><span style="font-weight:500;">{{ $user->email }}</span></div>
+        <div class="list-item"><span style="color:#64748b;">Phone</span><span style="font-weight:500;">{{ $user->phone_number }}</span></div>
+        <div class="list-item"><span style="color:#64748b;">Employee ID</span><span style="font-weight:500;">{{ $user->employee_id ?? 'N/A' }}</span></div>
+        <div class="list-item"><span style="color:#64748b;">Site</span><span style="font-weight:500;">{{ $user->site->site_name ?? 'Not assigned' }}</span></div>
+        <div class="list-item"><span style="color:#64748b;">Joined</span><span style="font-weight:500;">{{ $user->created_at ? $user->created_at->format('M d, Y') : 'N/A' }}</span></div>
     </div>
 
-    <form action="/logout" method="POST">
+    <form action="{{ route('logout') }}" method="POST">
         @csrf
-        <button type="submit" class="btn btn-danger">🚪 Logout</button>
+        <button type="submit" class="btn btn-danger">🚪 Sign Out</button>
     </form>
 </div>
 @endsection
